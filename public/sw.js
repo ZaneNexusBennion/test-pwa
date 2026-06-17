@@ -1,18 +1,14 @@
-// Tells browser that I (the new SW) should take over immediately
 importScripts(
     "https://storage.googleapis.com/workbox-cdn/releases/7.0.0/workbox-sw.js",
 );
+// Tells browser that I (the new SW) should take over immediately
 const { clientsClaim } = workbox.core;
 // Automatically deletes old cached files (e.g., delete files older than 60 days)
-import { ExpirationPlugin } from "workbox-expiration";
+const { ExpirationPlugin } = workbox.expiration;
 // Tools to say "when this request happens, do this"
-import { registerRoute, NavigationRoute } from "workbox-routing";
+const { registerRoute, NavigationRoute } = workbox.routing;
 // Different caching strategies
-import {
-    StaleWhileRevalidate,
-    NetworkFirst,
-    NetworkOnly,
-} from "workbox-strategies";
+const { StaleWhileRevalidate, NetworkFirst, CacheFirst } = workbox.strategies;
 
 // Tells service worker to activate immediate and take control of app
 clientsClaim();
