@@ -1,41 +1,63 @@
 importScripts(
     "https://storage.googleapis.com/workbox-cdn/releases/7.0.0/workbox-sw.js",
 );
-// Tells browser that I (the new SW) should take over immediately
+
 const { clientsClaim } = workbox.core;
-// Automatically deletes old cached files (e.g., delete files older than 60 days)
 const { ExpirationPlugin } = workbox.expiration;
-// Tools to say "when this request happens, do this"
 const { registerRoute, NavigationRoute } = workbox.routing;
-// Different caching strategies
 const { StaleWhileRevalidate, NetworkFirst, CacheFirst } = workbox.strategies;
 
-// Tells service worker to activate immediate and take control of app
 clientsClaim();
 
-// When a user navigates to a page, try to get that page from the internet.
-// If that fails, fallback on the cached page.
-const appShellRoute = new NavigationRoute(
-    new NetworkFirst({
-        cacheName: "app-shell",
-        plugins: [
-            new ExpirationPlugin({
-                maxEntries: 50,
-                maxAgeSeconds: 7 * 24 * 60 * 60,
-            }),
-        ],
-    }),
-    {
-        // Allow all pages to be cached except for api routes
-        allowlist: [/^\/(?!api\/).*$/],
-        denylist: [/\.map$/, /hot-update/],
-    },
+// ==============================================================================
+// AUTO-DETECT ENVIRONMENT
+// ==============================================================================
+// Check if we're in development by looking at the URL
+// In development: localhost, 127.0.0.1, or 0.0.0.0
+// In production: your actual domain
+
+const isDevelopment =
+    self.location.hostname === "localhost" ||
+    self.location.hostname === "127.0.0.1" ||
+    self.location.hostname === "0.0.0.0";
+
+console.log(
+    `[SW] Running in ${isDevelopment ? "DEVELOPMENT" : "PRODUCTION"} mode`,
 );
 
-registerRoute(appShellRoute);
+// ==============================================================================
+// APP SHELL STRATEGY (Navigation)
+// Only cache pages in production, not in development
+// ==============================================================================
 
-// Serve JS and CSS files immediately while also fetching a fresh
-// copy in the background and update the cache
+if (!isDevelopment) {
+    console.log("[SW] Navigation caching enabled (production mode)");
+
+    const appShellRoute = new NavigationRoute(
+        new NetworkFirst({
+            cacheName: "app-shell",
+            plugins: [
+                new ExpirationPlugin({
+                    maxEntries: 50,
+                    maxAgeSeconds: 7 * 24 * 60 * 60,
+                }),
+            ],
+        }),
+        {
+            allowlist: [/^\/(?!api\/).*$/],
+            denylist: [/\.map$/, /hot-update/],
+        },
+    );
+
+    registerRoute(appShellRoute);
+} else {
+    console.log("[SW] Navigation caching disabled (development mode)");
+}
+
+// ==============================================================================
+// STATIC ASSETS (JS & CSS) - Always cache, safe in both dev and prod
+// ==============================================================================
+
 registerRoute(
     ({ request }) =>
         request.destination === "script" || request.destination === "style",
@@ -50,7 +72,10 @@ registerRoute(
     }),
 );
 
-// For images: Check cache first, only update from network if there's no cache
+// ==============================================================================
+// IMAGES
+// ==============================================================================
+
 registerRoute(
     ({ request }) => request.destination === "image",
     new CacheFirst({
@@ -64,19 +89,28 @@ registerRoute(
     }),
 );
 
-// For APIs: If network is slow, get cached response
+// ==============================================================================
+// API ROUTES - Use NetworkFirst with short timeout
+// ==============================================================================
+
 registerRoute(
     ({ url }) => url.pathname.startsWith("/api/"),
     new NetworkFirst({
         cacheName: "api-responses",
         networkTimeoutSeconds: 3,
         plugins: [
-            new ExpirationPlugin({ maxEntries: 50, maxAgeSeconds: 5 * 60 }),
+            new ExpirationPlugin({
+                maxEntries: 50,
+                maxAgeSeconds: 5 * 60,
+            }),
         ],
     }),
 );
 
-// CacheFirst for any requests to a different domain
+// ==============================================================================
+// EXTERNAL RESOURCES (Google Fonts, CDNs)
+// ==============================================================================
+
 registerRoute(
     ({ url }) => url.origin !== location.origin,
     new CacheFirst({
@@ -89,3 +123,5 @@ registerRoute(
         ],
     }),
 );
+
+console.log("[SW] Service worker initialized successfully");

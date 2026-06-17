@@ -6,15 +6,15 @@ export async function GET(req: NextRequest) {
 
     switch (rand) {
         case 1: {
-            msg = "Hello there!";
+            msg = "1. Hello there!";
             break;
         }
         case 2: {
-            msg = "Howya doin?";
+            msg = "2. Howya doin?";
             break;
         }
         case 3: {
-            msg = "APIs are cool!";
+            msg = "3. APIs are cool!";
             break;
         }
         default: {
