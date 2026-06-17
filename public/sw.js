@@ -77,3 +77,17 @@ registerRoute(
         ],
     }),
 );
+
+// CacheFirst for any requests to a different domain
+registerRoute(
+    ({ url }) => url.origin !== location.origin,
+    new CacheFirst({
+        cacheName: "external-resources",
+        plugins: [
+            new ExpirationPlugin({
+                maxEntries: 100,
+                maxAgeSeconds: 30 * 24 * 60 * 60,
+            }),
+        ],
+    }),
+);
