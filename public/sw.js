@@ -1,4 +1,5 @@
 // Tells browser that I (the new SW) should take over immediately
+import { register } from "next/dist/next-devtools/userspace/pages/pages-dev-overlay-setup";
 import { clientsClaim } from "workbox-core";
 // Automatically deletes old cached files (e.g., delete files older than 60 days)
 import { ExpirationPlugin } from "workbox-expiration";
@@ -34,3 +35,45 @@ const appShellRoute = new NavigationRoute(
 );
 
 registerRoute(appShellRoute);
+
+// Serve JS and CSS files immediately while also fetching a fresh
+// copy in the background and update the cache
+registerRoute(
+    ({ request }) =>
+        request.destination === "script" || request.destination === "style",
+    new StaleWhileRevalidate({
+        cacheName: "static-resources",
+        plugins: [
+            new ExpirationPlugin({
+                maxEntries: 100,
+                maxAgeSeconds: 30 * 24 * 60 * 60,
+            }),
+        ],
+    }),
+);
+
+// For images: Check cache first, only update from network if there's no cache
+registerRoute(
+    ({ request }) => request.destination === "image",
+    new CacheFirst({
+        cacheName: "images",
+        plugins: [
+            new ExpirationPlugin({
+                maxEntries: 200,
+                maxAgeSeconds: 60 * 24 * 60 * 60,
+            }),
+        ],
+    }),
+);
+
+// For APIs: If network is slow, get cached response
+registerRoute(
+    ({ url }) => url.pathname.startsWith("/api/"),
+    new NetworkFirst({
+        cacheName: "api-responses",
+        networkTimeoutSeconds: 3,
+        plugins: [
+            new ExpirationPlugin({ maxEntries: 50, maxAgeSeconds: 5 * 60 }),
+        ],
+    }),
+);
