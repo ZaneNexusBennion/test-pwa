@@ -13,7 +13,10 @@ export default function Home() {
 
     return (
         <div className="m-auto">
-            <div className="m-4 text-6xl">Wow look at this app!</div>
+            <div className="flex justify-center items-center">
+                <div className="m-4 text-6xl">Wow look at this app!</div>
+                <img src={"/thumbs-up.png"} className="h-20 w-auto"></img>
+            </div>
             <div className="flex gap-2">
                 <span className="grow py-2 px-4 rounded-2xl border border-gray-400">
                     {text}
