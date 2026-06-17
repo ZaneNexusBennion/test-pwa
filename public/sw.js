@@ -1,6 +1,8 @@
 // Tells browser that I (the new SW) should take over immediately
-import { register } from "next/dist/next-devtools/userspace/pages/pages-dev-overlay-setup";
-import { clientsClaim } from "workbox-core";
+importScripts(
+    "https://storage.googleapis.com/workbox-cdn/releases/7.0.0/workbox-sw.js",
+);
+const { clientsClaim } = workbox.core;
 // Automatically deletes old cached files (e.g., delete files older than 60 days)
 import { ExpirationPlugin } from "workbox-expiration";
 // Tools to say "when this request happens, do this"
